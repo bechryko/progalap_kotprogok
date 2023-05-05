@@ -6,6 +6,21 @@ typedef struct KepTipus{
     int **pontok;
 } KepTipus;
 
+KepTipus masolas(KepTipus eredeti) {
+    KepTipus kep;
+    kep.szelesseg = eredeti.szelesseg;
+    kep.magassag = eredeti.magassag;
+    kep.szinek = eredeti.szinek;
+    kep.pontok = malloc(sizeof (int *) * (kep.foglaltMagassag = kep.magassag));
+    for (int i = 0; i < kep.magassag; ++i) {
+        kep.pontok[i] = malloc(sizeof (int) * (kep.foglaltSzelesseg = kep.szelesseg));
+        for (int j = 0; j < kep.szelesseg; ++j) {
+            kep.pontok[i][j] = eredeti.pontok[i][j];
+        }
+    }
+    return kep;
+}
+
 KepTipus betoltes(char fajlnev[]){
     KepTipus kep;
     FILE *f = fopen(fajlnev, "r");
@@ -43,17 +58,17 @@ void kepFelszabaditas(KepTipus kep) {
     free(kep.pontok);
 }
 
-KepTipus nagyobbitas(KepTipus eredeti, int novelesSzorzoja) {
+void nagyobbitas(KepTipus *eredeti, int novelesSzorzoja) {
     KepTipus kep;
-    kep.szelesseg = eredeti.szelesseg * novelesSzorzoja;
-    kep.magassag = eredeti.magassag * novelesSzorzoja;
-    kep.szinek = eredeti.szinek;
+    kep.szelesseg = eredeti->szelesseg * novelesSzorzoja;
+    kep.magassag = eredeti->magassag * novelesSzorzoja;
+    kep.szinek = eredeti->szinek;
     kep.pontok = malloc(sizeof (int *) * (kep.foglaltMagassag = kep.magassag));
     for (int i = 0; i < kep.magassag; ++i) {
         kep.pontok[i] = malloc(sizeof (int) * (kep.foglaltSzelesseg = kep.szelesseg));
         for (int j = 0; j < kep.szelesseg; ++j) {
             if(i % novelesSzorzoja == 0 && j % novelesSzorzoja == 0) {
-                kep.pontok[i][j] = eredeti.pontok[i / novelesSzorzoja][j / novelesSzorzoja];
+                kep.pontok[i][j] = eredeti->pontok[i / novelesSzorzoja][j / novelesSzorzoja];
             } else {
                 kep.pontok[i][j] = 0;
             }
@@ -82,20 +97,82 @@ KepTipus nagyobbitas(KepTipus eredeti, int novelesSzorzoja) {
     }
     kep.magassag -= novelesSzorzoja - 1;
     kep.szelesseg -= novelesSzorzoja - 1;
-    return kep;
+    kepFelszabaditas(*eredeti);
+    *eredeti = kep;
 }
 
-KepTipus kicsinyites(KepTipus eredeti, int csokkentesSzorzoja) {
+void kicsinyites(KepTipus *eredeti, int csokkentesSzorzoja) {
     KepTipus kep;
-    kep.szelesseg = eredeti.szelesseg / csokkentesSzorzoja;
-    kep.magassag = eredeti.magassag / csokkentesSzorzoja;
-    kep.szinek = eredeti.szinek;
-    kep.pontok = malloc(sizeof (int *) * (kep.foglaltMagassag = kep.magassag));
-    for (int i = 0; i < kep.magassag; ++i) {
-        kep.pontok[i] = malloc(sizeof (int) * (kep.foglaltSzelesseg = kep.szelesseg));
-        for (int j = 0; j < kep.szelesseg; ++j) {
-            kep.pontok[i][j] = eredeti.pontok[i * csokkentesSzorzoja][j * csokkentesSzorzoja];
+    kep.szelesseg = eredeti->szelesseg / csokkentesSzorzoja;
+    kep.magassag = eredeti->magassag / csokkentesSzorzoja;
+    kep.szinek = eredeti->szinek;
+    kep.pontok = malloc(sizeof(int*) * (kep.foglaltMagassag = kep.magassag));
+    for(int i = 0; i < kep.magassag; ++i) {
+        kep.pontok[i] = malloc(sizeof(int) * (kep.foglaltSzelesseg = kep.szelesseg));
+        for(int j = 0; j < kep.szelesseg; ++j) {
+            kep.pontok[i][j] = eredeti->pontok[i * csokkentesSzorzoja][j * csokkentesSzorzoja];
         }
     }
-    return kep;
+    kepFelszabaditas(*eredeti);
+    *eredeti = kep;
+}
+
+void erozio(KepTipus *eredeti, int maszkMeret) {
+    if(maszkMeret % 2 == 0) {
+        fprintf(stderr, "A maszk merete csak paratlan lehet!\n");
+        return;
+    } else if(maszkMeret < 3) {
+        fprintf(stderr, "A maszk merete legalabb 3 kell legyen!\n");
+        return;
+    }
+    KepTipus kep = masolas(*eredeti);
+    for(int i = 0; i < kep.magassag; ++i) {
+        for(int j = 0; j < kep.szelesseg; ++j) {
+            int min = 255;
+            for(int k = 0; k < maszkMeret; ++k) {
+                for(int l = 0; l < maszkMeret; ++l) {
+                    int x = i - (maszkMeret / 2) + k;
+                    int y = j - (maszkMeret / 2) + l;
+                    if(x < 0 || x >= kep.magassag || y < 0 || y >= kep.szelesseg) {
+                        continue;
+                    }
+                    if(kep.pontok[x][y] < min) {
+                        min = kep.pontok[x][y];
+                    }
+                }
+            }
+            eredeti->pontok[i][j] = min;
+        }
+    }
+    kepFelszabaditas(kep);
+}
+
+void dilatacio(KepTipus *eredeti, int maszkMeret) {
+    if(maszkMeret % 2 == 0) {
+        fprintf(stderr, "A maszk merete csak paratlan lehet!\n");
+        return;
+    } else if(maszkMeret < 3) {
+        fprintf(stderr, "A maszk merete legalabb 3 kell legyen!\n");
+        return;
+    }
+    KepTipus kep = masolas(*eredeti);
+    for(int i = 0; i < kep.magassag; ++i) {
+        for(int j = 0; j < kep.szelesseg; ++j) {
+            int max = 0;
+            for(int k = 0; k < maszkMeret; ++k) {
+                for(int l = 0; l < maszkMeret; ++l) {
+                    int x = i - (maszkMeret / 2) + k;
+                    int y = j - (maszkMeret / 2) + l;
+                    if(x < 0 || x >= kep.magassag || y < 0 || y >= kep.szelesseg) {
+                        continue;
+                    }
+                    if(kep.pontok[x][y] > max) {
+                        max = kep.pontok[x][y];
+                    }
+                }
+            }
+            eredeti->pontok[i][j] = max;
+        }
+    }
+    kepFelszabaditas(kep);
 }
