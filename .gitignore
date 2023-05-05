@@ -1,0 +1,5 @@
+# Futtathato allomanyok
+*.exe
+
+# Digitalis kepfeldolgozas projektben az eredmeny kepek
+digitalisKepfeldolgozas/*.pgm
